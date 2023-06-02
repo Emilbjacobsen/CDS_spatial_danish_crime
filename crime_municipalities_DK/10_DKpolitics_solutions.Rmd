@@ -191,9 +191,8 @@ elections %>%
               title= "Percentage of Votes \nin 2011")
 
 elections %>% 
-  filter(grepl("^A|^O",Party)) %>% 
+  #filter(grepl("^A|^O",Party)) %>% 
   tm_shape() + 
-  tm_facets("Party") +
   tm_polygons("pct_vote2015",
               title= "Percentage of Votes \nin 2015")
 

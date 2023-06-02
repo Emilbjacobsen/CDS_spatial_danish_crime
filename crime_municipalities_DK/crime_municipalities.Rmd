@@ -85,96 +85,76 @@ data
 ```
 
 ```{r}
-# Map some aspect of the result to see no counties are missing
-vold %>% 
-  group_by(NAME_2) %>% 
-  select(Y2018K1) %>% 
-  mapview()
+percentage_cols <- df[,2:21] / df$crime_sum*100
+df[,2:21] <- percentage_cols
 ```
 
 
 
 ```{r}
-library(leaflet)
-library(shiny)
 
-# Assuming you have your merged dataset with municipality boundaries and crime rate for each time period
-# Create a leaflet map
-leaflet() %>%
-  addTiles() %>%
-  addPolygons(data = merged_data, fillColor = ~color_variable, fillOpacity = 0.7,
-              color = "white", weight = 1) %>%
-  addLegend("bottomright", colors = "your_color_palette", labels = "Time Period",
-            title = "Crime Rate") %>%
-  addControl(
-    sliderControl(
-      position = "bottomleft",
-      step = 1,
-      min = min(merged_data$time_variable),
-      max = max(merged_data$time_variable),
-      value = min(merged_data$time_variable),
-      label = "Time Period",
-      animate = TRUE,
-      width = "250px"
-    )
-  )
+library(shiny)
+library(tmap)
+
+df %>% 
+  tm_shape() + 
+  tm_polygons("Y2018K1",
+              title= "Percentage of Votes \nin 2015") +
+  tm_text(text = "NAME_2", size = "AREA", root = 100)
+
+
+
+
 
 ```
 
 ```{r min koffein induced shitstorm af en leaflet map}
-library(leaflet)
+# Load required libraries
+
+library(mapview)
 library(shiny)
-library(sf)
 
-
-
-# Create a leaflet map with initial settings
-map <- leaflet() %>%
-  addProviderTiles("CartoDB.Positron") # Choose a tile provider for the basemap
-
-# Define the color palette for the polygons
-palette <- colorNumeric(palette = "Blues", domain = df$Y2018K1)  # Adjust the column name to the desired year
-
-# Add the polygons to the map
-map <- map %>%
-  addPolygons(
-    data = df,
-    fillColor = ~palette(Y2018K1),  # Adjust the column name to the desired year
-    fillOpacity = 0.8,
-    color = "black",
-    weight = 1,
-    popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", Y2018K1)  # Adjust the column names to include in the popup
-  )
+library(tmap)
 
 # Create a shiny application
-shinyApp(
+
   ui = fluidPage(
-    leafletOutput("map"),
-    sliderInput(
-      "year",
-      "Year",
-      min = 2018, max = 2022, value = 2018, step = 1
-    )
-  ),
-  server = function(input, output, session) {
-    # Update the color palette and fill color based on the selected year
-    observeEvent(input$year, {
-      selectedYear <- paste0("Y", input$year, "K1")  # Adjust the column name to the desired format
-      palette <- colorNumeric(palette = "Blues", domain = df[[selectedYear]])
+    titlePanel("Danish Municipality Crime"),
+    
+      # Create a slider input for selecting the column
+    sliderInput("columnSelect", "Select Column:",
+              min = 2, max = 21, value = 2, width = "50%"),
+
+    
+    # Create a leaflet map output
+    tmapOutput("map",height = "1000px")
+  )
+  
+  server= function(input, output, session) {
+
+    
+    # Render the map
+    output$map <- renderTmap({
+          # Get the selected column based on the slider input
+      selectedColumn <- colnames(df)[input$columnSelect]
+      # Create a mapview object with the selected column
+      my_map <- df %>% 
+                  tm_shape() + 
+                  tm_polygons(selectedColumn,
+                              title= "Percentage of Votes \nin 2015") +
+                  tm_text(text = "NAME_2") +
+                  tm_view(set.view = 8)  # Set the initial zoom level here
+
+
       
-      mapProxy <- leafletProxy("map", data = df)
-      mapProxy %>%
-        clearShapes() %>%
-        addPolygons(
-          fillColor = ~palette(.data[[selectedYear]]),
-          fillOpacity = 0.8,
-          color = "black",
-          weight = 1,
-          popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", .data[[selectedYear]])
-        )
+
     })
   }
-)
+
+
+shinyApp(ui, server)
+
+
 
 
 
