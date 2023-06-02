@@ -48,7 +48,7 @@ mun$NAME_2[60] <- "Vesthimmerlands"
 ```{r load vold }
 # read in data from csv
 voldsforbrydelser <- read_csv2("data/voldsforbrydelser_numbers.csv")
-befolkningstal <- read_csv2("data/befolkningstal_kommuner_sb.csv")
+befolkningstal <- read_csv2("data/befolkningstale_kommuner_numbers.csv")
 # delete row 1 and 3 and column 1
 voldsforbrydelser <- voldsforbrydelser[-c(1,3), -1]
 #rename colums with names of the first row
@@ -70,13 +70,48 @@ voldsforbrydelser[,2:21] <- sapply(voldsforbrydelser[ ,2:21], as.numeric)
 voldsforbrydelser$crime_sum <- rowSums(voldsforbrydelser[,2:21])
 
 
+# edit befolkningstl csv
+befolkningstal <- befolkningstal[-c(1),]
+#rename colums with names of the first row
+colnames(befolkningstal) <- befolkningstal[1, ]
+# delete row with rownames
+befolkningstal <- befolkningstal[-1,]
+# drop NA-rows
+befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
+#drop 'ukendt kommune' row
+befolkningstal <- befolkningstal[-100,]
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:21] <- sapply(befolkningstal[ ,2:21], as.numeric)
+# getting sum of rows
+befolkningstal$crime_sum <- rowSums(befolkningstal[,2:21])
+
+
+crime_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  crime_col <- voldsforbrydelser[, year]   # Get the crime column for the current year
+  
+  crime_rate[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+
+
 ```
 
 ```{r}
 
 df <- mun %>% 
   select(NAME_2) %>% 
-  merge(voldsforbrydelser, by.x = "NAME_2",by.y ="municipalities")
+  merge(crime_rate, by.x = "NAME_2",by.y ="Municipality")
 
 ```
 
