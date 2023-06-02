@@ -47,8 +47,8 @@ mun$NAME_2[60] <- "Vesthimmerlands"
 
 ```{r load vold }
 # read in data from csv
-voldsforbrydelser <- read_csv2("data/voldsforbrydelser_numbers.csv")
-befolkningstal <- read_csv2("data/befolkningstale_kommuner_numbers.csv")
+voldsforbrydelser <- read_csv2("data/anmeldte_forbrydelser_ialt_år_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_år_kolon_numbers.csv")
 # delete row 1 and 3 and column 1
 voldsforbrydelser <- voldsforbrydelser[-c(1,3), -1]
 #rename colums with names of the first row
