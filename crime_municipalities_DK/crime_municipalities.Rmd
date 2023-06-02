@@ -73,16 +73,15 @@ voldsforbrydelser$crime_sum <- rowSums(voldsforbrydelser[,2:21])
 
 ```{r}
 
-vold <- mun %>% 
+df <- mun %>% 
   select(NAME_2) %>% 
   merge(voldsforbrydelser, by.x = "NAME_2",by.y ="municipalities")
 
 ```
 
 ```{r}
-percentage_cols <- vold[,2:21] / vold$crime_sum*100
+data
 
-vold[,2:21] <- percentage_cols
 ```
 
 ```{r}
@@ -122,5 +121,127 @@ leaflet() %>%
 
 ```
 
+```{r min koffein induced shitstorm af en leaflet map}
+library(leaflet)
+library(shiny)
+library(sf)
 
+
+
+# Create a leaflet map with initial settings
+map <- leaflet() %>%
+  addProviderTiles("CartoDB.Positron") # Choose a tile provider for the basemap
+
+# Define the color palette for the polygons
+palette <- colorNumeric(palette = "Blues", domain = df$Y2018K1)  # Adjust the column name to the desired year
+
+# Add the polygons to the map
+map <- map %>%
+  addPolygons(
+    data = df,
+    fillColor = ~palette(Y2018K1),  # Adjust the column name to the desired year
+    fillOpacity = 0.8,
+    color = "black",
+    weight = 1,
+    popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", Y2018K1)  # Adjust the column names to include in the popup
+  )
+
+# Create a shiny application
+shinyApp(
+  ui = fluidPage(
+    leafletOutput("map"),
+    sliderInput(
+      "year",
+      "Year",
+      min = 2018, max = 2022, value = 2018, step = 1
+    )
+  ),
+  server = function(input, output, session) {
+    # Update the color palette and fill color based on the selected year
+    observeEvent(input$year, {
+      selectedYear <- paste0("Y", input$year, "K1")  # Adjust the column name to the desired format
+      palette <- colorNumeric(palette = "Blues", domain = df[[selectedYear]])
+      
+      mapProxy <- leafletProxy("map", data = df)
+      mapProxy %>%
+        clearShapes() %>%
+        addPolygons(
+          fillColor = ~palette(.data[[selectedYear]]),
+          fillOpacity = 0.8,
+          color = "black",
+          weight = 1,
+          popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", .data[[selectedYear]])
+        )
+    })
+  }
+)
+
+
+
+
+
+```
+```{r min koffein induced shitstorm af en leaflet map}
+library(leaflet)
+library(shiny)
+library(sf)
+
+
+# Convert dataframe to sf object
+sf_data <- st_as_sf(df)
+
+# Transform the coordinate system to WGS84 (latitude and longitude)
+sf_data <- st_transform(sf_data, crs = st_crs(4326))
+
+# Create a leaflet map with initial settings
+map <- leaflet() %>%
+  addProviderTiles("CartoDB.Positron")
+
+# Define the color palette for the polygons
+palette <- colorNumeric(palette = "Blues", domain = sf_data$Y2018K1)
+
+# Add the polygons to the map
+map <- map %>%
+  addPolygons(
+    data = sf_data,
+    fillColor = ~palette(Y2018K1),
+    fillOpacity = 0.8,
+    color = "black",
+    weight = 1,
+    popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", Y2018K1)
+  )
+
+# Create a shiny application
+shinyApp(
+  ui = fluidPage(
+    leafletOutput("map"),
+    sliderInput(
+      "year",
+      "Year",
+      min = 2018, max = 2022, value = 2018, step = 1
+    )
+  ),
+  server = function(input, output, session) {
+    # Update the color palette and fill color based on the selected year
+    observeEvent(input$year, {
+      selectedYear <- paste0("Y", input$year, "K1")
+      palette <- colorNumeric(palette = "Blues", domain = sf_data[[selectedYear]])
+
+      mapProxy <- leafletProxy("map", data = sf_data)
+      mapProxy %>%
+        clearShapes() %>%
+        addPolygons(
+          fillColor = ~palette(.data[[selectedYear]]),
+          fillOpacity = 0.8,
+          color = "black",
+          weight = 1,
+          popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", .data[[selectedYear]])
+        )
+    })
+  }
+)
+
+
+
+```
 
