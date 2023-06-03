@@ -47,48 +47,48 @@ mun$NAME_2[60] <- "Vesthimmerlands"
 
 ```{r load vold }
 # read in data from csv
-voldsforbrydelser <- read_csv2("data/forbrydelse_alle_numbers.csv")
-befolkningstal <- read_csv2("data/befolkningstal_år_kolon_numbers.csv")
+voldsforbrydelser <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
 # delete row 1 and 3 and column 1
 #voldsforbrydelser <- voldsforbrydelser[-c(1,3), -1]
 #rename colums with names of the first row
-colnames(voldsforbrydelser) <- voldsforbrydelser[1, ]
+#colnames(voldsforbrydelser) <- voldsforbrydelser[1, ]
 # delete row with rownames
-voldsforbrydelser <- voldsforbrydelser[-1,]
+#voldsforbrydelser <- voldsforbrydelser[-1,]
 # drop NA-rows
 #voldsforbrydelser <- voldsforbrydelser[complete.cases(voldsforbrydelser), ]
 #drop 'ukendt kommune' row
-voldsforbrydelser <- voldsforbrydelser[-100,]
+#voldsforbrydelser <- voldsforbrydelser[-100,]
 # pasting 'Y' before columnname
 colnames(voldsforbrydelser) <- paste0("Y", colnames(voldsforbrydelser))
 # rename the first column
-#colnames(voldsforbrydelser)[1] <- "municipalities"
+colnames(voldsforbrydelser)[1] <- "municipalities"
 
 # assign numbers as numbers
-voldsforbrydelser[,2:6] <- sapply(voldsforbrydelser[ ,2:6], as.numeric)
+voldsforbrydelser[,2:12] <- sapply(voldsforbrydelser[ ,2:12], as.numeric)
 # getting sum of rows
-voldsforbrydelser$crime_sum <- rowSums(voldsforbrydelser[,2:6])
+voldsforbrydelser$crime_sum <- rowSums(voldsforbrydelser[,2:12])
 
 
 # edit befolkningstl csv
-befolkningstal <- befolkningstal[-c(1),]
+#befolkningstal <- befolkningstal[-c(1),]
 #rename colums with names of the first row
-colnames(befolkningstal) <- befolkningstal[1, ]
+#colnames(befolkningstal) <- befolkningstal[1, ]
 # delete row with rownames
-befolkningstal <- befolkningstal[-1,]
+#befolkningstal <- befolkningstal[-1,]
 # drop NA-rows
-befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
+#befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
 #drop 'ukendt kommune' row
-befolkningstal <- befolkningstal[-100,]
+#befolkningstal <- befolkningstal[-100,]
 # pasting 'Y' before columnname
 colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
 # rename the first column
 colnames(befolkningstal)[1] <- "municipalities"
 
 # assign numbers as numbers
-befolkningstal[,2:6] <- sapply(befolkningstal[ ,2:6], as.numeric)
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
 # getting sum of rows
-befolkningstal$crime_sum <- rowSums(befolkningstal[,2:6])
+befolkningstal$crime_sum <- rowSums(befolkningstal[,2:12])
 
 
 crime_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
@@ -106,11 +106,16 @@ for (year in years) {
 
 # Add columns for the change in crime rate per year
 crime_data <- crime_rate %>%
-  mutate(change_2019 = Y2019 - Y2018,
-         change_2020 = Y2020 - Y2019,
-         change_2021 = Y2021 - Y2020,
-         change_2022 = Y2022 - Y2021)
-
+    mutate(change_2013 = Y2013 - Y2012,
+           change_2014 = Y2014 - Y2013,
+           change_2015 = Y2015 - Y2014,
+           change_2016 = Y2016 - Y2015,
+           change_2017 = Y2017 - Y2016,
+           change_2018 = Y2018 - Y2017,
+           change_2019 = Y2019 - Y2018,
+           change_2020 = Y2020 - Y2019,
+           change_2021 = Y2021 - Y2020,
+           change_2022 = Y2022 - Y2021)
 
 
 
@@ -128,7 +133,54 @@ df <- mun %>%
 ```
 
 ```{r}
-data
+# Load required libraries
+library(mapview)
+library(shiny)
+library(tmap)
+
+# Create ui for shiny application
+ui <- fluidPage(
+  titlePanel("Danish Municipality Crime"),
+  
+  # Create a slider input for selecting the column
+  sliderInput("columnSelect", "Select Column:",
+              min = 14, max = 23, value = 14, width = "50%"),
+  
+  # Create a tmap output and make the map bigger
+  tmapOutput("map", height = "1000px")
+)
+
+# Defining server function
+server <- function(input, output, session) {
+  
+  # Render the map
+  output$map <- renderTmap({
+    
+    # Get the selected column based on the slider input
+    selectedColumn <- colnames(df)[input$columnSelect]
+    
+    # Create the map with fixed breaks between -50 and 50
+    my_map <- df %>%
+      tm_shape() +
+      tm_fill(
+        col = selectedColumn,
+        title = paste("Crime per 1000 inhabitants:", selectedColumn),
+        style = "cont",
+        palette = "-RdBu",
+        breaks = c(-50, seq(-40, 40, by = 10), 50),
+        legend.hist = TRUE
+      ) +
+      tm_text(text = "NAME_2") +
+      tm_view(set.view = 8)  # Set the initial zoom level here
+    
+    my_map
+  })
+}
+
+# Calling shinyApp
+shinyApp(ui, server)
+
+
 
 ```
 
@@ -139,67 +191,51 @@ df[,2:21] <- percentage_cols
 
 
 
-```{r}
-
-library(shiny)
-library(tmap)
-
-df %>% 
-  tm_shape() + 
-  tm_polygons("Y2018K1",
-              title= "Percentage of Votes \nin 2015") +
-  tm_text(text = "NAME_2", size = "AREA", root = 100)
 
 
-
-
-
-```
-
-```{r min koffein induced shitstorm af en leaflet map}
+```{r Tmap with Shiny integrated}
 # Load required libraries
-
 library(mapview)
 library(shiny)
-
 library(tmap)
 
-# Create a shiny application
-
+# Create ui for shiny application
   ui = fluidPage(
     titlePanel("Danish Municipality Crime"),
     
-      # Create a slider input for selecting the column
+    # Create a slider input for selecting the year you wish to view
     sliderInput("columnSelect", "Select Column:",
-              min = 8, max = 11, value = 8, width = "50%"),
+              min = 14, max = 23, value = 14, width = "50%"),
 
     
-    # Create a leaflet map output
+    # Create a tmap output and make the map bigger
     tmapOutput("map",height = "1000px")
   )
   
+  # Defining server function
   server= function(input, output, session) {
 
     
-    # Render the map
-    output$map <- renderTmap({
-          # Get the selected column based on the slider input
+      # Render the map
+      output$map <- renderTmap({
+      
+      # Get the selected column based on the slider input
       selectedColumn <- colnames(df)[input$columnSelect]
-      # Create a mapview object with the selected column
+      
+
+      
+      # Creating the map itself and assigning it to the map object
       my_map <- df %>% 
-                  tm_shape() + 
-                    tm_polygons(selectedColumn,
+                    # Using tm_shape function
+                    tm_shape() + 
+        
+                    # Calling tm_polygons for drawing the polygons
+                    tm_fill(selectedColumn,
                                 title = paste("Crime per 1000 inhabitants:", selectedColumn),
                                 style = "cont",
                                 palette = "-RdBu",
                                 legend.hist = TRUE) +
-                    tm_fill(col = selectedColumn,
-                            style = "cont",
-                            palette =c("blue", "red"),
-                            breaks = c(-Inf, 0, Inf),
-                            title = "Percentage of Votes \nin 2015",
-                            labels = c("Negative", "Positive"),
-                            legend.hist = TRUE) +
+
                   tm_text(text = "NAME_2") +
                   tm_view(set.view = 8)  # Set the initial zoom level here
  
@@ -210,77 +246,11 @@ library(tmap)
     })
   }
 
-
+# Calling server function
 shinyApp(ui, server)
 
 
 
-
-
-
-
 ```
-```{r min koffein induced shitstorm af en leaflet map}
-library(leaflet)
-library(shiny)
-library(sf)
 
-
-# Convert dataframe to sf object
-sf_data <- st_as_sf(df)
-
-# Transform the coordinate system to WGS84 (latitude and longitude)
-sf_data <- st_transform(sf_data, crs = st_crs(4326))
-
-# Create a leaflet map with initial settings
-map <- leaflet() %>%
-  addProviderTiles("CartoDB.Positron")
-
-# Define the color palette for the polygons
-palette <- colorNumeric(palette = "Blues", domain = sf_data$Y2018K1)
-
-# Add the polygons to the map
-map <- map %>%
-  addPolygons(
-    data = sf_data,
-    fillColor = ~palette(Y2018K1),
-    fillOpacity = 0.8,
-    color = "black",
-    weight = 1,
-    popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", Y2018K1)
-  )
-
-# Create a shiny application
-shinyApp(
-  ui = fluidPage(
-    leafletOutput("map"),
-    sliderInput(
-      "year",
-      "Year",
-      min = 2018, max = 2022, value = 2018, step = 1
-    )
-  ),
-  server = function(input, output, session) {
-    # Update the color palette and fill color based on the selected year
-    observeEvent(input$year, {
-      selectedYear <- paste0("Y", input$year, "K1")
-      palette <- colorNumeric(palette = "Blues", domain = sf_data[[selectedYear]])
-
-      mapProxy <- leafletProxy("map", data = sf_data)
-      mapProxy %>%
-        clearShapes() %>%
-        addPolygons(
-          fillColor = ~palette(.data[[selectedYear]]),
-          fillOpacity = 0.8,
-          color = "black",
-          weight = 1,
-          popup = ~paste("Municipality:", NAME_2, "<br>Crimes:", .data[[selectedYear]])
-        )
-    })
-  }
-)
-
-
-
-```
 
