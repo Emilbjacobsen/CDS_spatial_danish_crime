@@ -117,7 +117,7 @@ crime_data <- crime_rate %>%
            change_2021 = Y2021 - Y2020,
            change_2022 = Y2022 - Y2021)
 
-
+crime_data_final <- crime_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
 
@@ -185,18 +185,18 @@ for (year in years) {
 
 # Add columns for the change in crime rate per year
 ejendom_data <- ejendom_rate %>%
-    mutate(change_2013 = Y2013 - Y2012,
-           change_2014 = Y2014 - Y2013,
-           change_2015 = Y2015 - Y2014,
-           change_2016 = Y2016 - Y2015,
-           change_2017 = Y2017 - Y2016,
-           change_2018 = Y2018 - Y2017,
-           change_2019 = Y2019 - Y2018,
-           change_2020 = Y2020 - Y2019,
-           change_2021 = Y2021 - Y2020,
-           change_2022 = Y2022 - Y2021)
+    mutate(change_2013_ejendom = Y2013 - Y2012,
+           change_2014_ejendom = Y2014 - Y2013,
+           change_2015_ejendom = Y2015 - Y2014,
+           change_2016_ejendom = Y2016 - Y2015,
+           change_2017_ejendom = Y2017 - Y2016,
+           change_2018_ejendom = Y2018 - Y2017,
+           change_2019_ejendom = Y2019 - Y2018,
+           change_2020_ejendom = Y2020 - Y2019,
+           change_2021_ejendom = Y2021 - Y2020,
+           change_2022_ejendom = Y2022 - Y2021)
 
-
+ejendom_data_final <- ejendom_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
 
@@ -263,16 +263,18 @@ for (year in years) {
 
 # Add columns for the change in crime rate per year
 vold_data <- vold_rate %>%
-    mutate(change_2013 = Y2013 - Y2012,
-           change_2014 = Y2014 - Y2013,
-           change_2015 = Y2015 - Y2014,
-           change_2016 = Y2016 - Y2015,
-           change_2017 = Y2017 - Y2016,
-           change_2018 = Y2018 - Y2017,
-           change_2019 = Y2019 - Y2018,
-           change_2020 = Y2020 - Y2019,
-           change_2021 = Y2021 - Y2020,
-           change_2022 = Y2022 - Y2021)
+    mutate(change_2013_vold = Y2013 - Y2012,
+           change_2014_vold = Y2014 - Y2013,
+           change_2015_vold = Y2015 - Y2014,
+           change_2016_vold = Y2016 - Y2015,
+           change_2017_vold = Y2017 - Y2016,
+           change_2018_vold = Y2018 - Y2017,
+           change_2019_vold = Y2019 - Y2018,
+           change_2020_vold = Y2020 - Y2019,
+           change_2021_vold = Y2021 - Y2020,
+           change_2022_vold = Y2022 - Y2021)
+
+vold_data_final <- vold_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
 
@@ -289,15 +291,19 @@ vold_data <- vold_rate %>%
 
 df1 <- mun %>% 
   select(NAME_2) %>% 
-  merge(crime_data, by.x = "NAME_2",by.y ="Municipality")
+  merge(crime_data_final, by.x = "NAME_2",by.y ="Municipality")
 
 df2 <- mun %>% 
   select(NAME_2) %>% 
-  merge(ejendom_data, by.x = "NAME_2",by.y ="Municipality")
+  merge(ejendom_data_final, by.x = "NAME_2",by.y ="Municipality")
 
 df3 <- mun %>% 
   select(NAME_2) %>% 
-  merge(vold_data, by.x = "NAME_2",by.y ="Municipality")
+  merge(vold_data_final, by.x = "NAME_2",by.y ="Municipality")
+
+df4_antal <- mun %>% 
+  select(NAME_2) %>% 
+  merge(all_crime, by.x = "NAME_2",by.y ="municipalities")
 
 ```
 
@@ -314,15 +320,22 @@ library(tmap)
 ui <- fluidPage(
   titlePanel("Danish Municipality Crime"),
   
+  # Download button for images
+  downloadButton("downloadBtn", "Download Image"),
+  
   # Create action buttons to switch between dataframes
-  actionButton("df1Btn", "All Crime"),
+  actionButton("df1Btn", "All Crime per 1000"),
   actionButton("df2Btn", "Property Crime"),
   actionButton("df3Btn", "Violent Crime"),
+  actionButton("df4Btn", "All Crimes"),
   # Add more buttons for additional dataframes
   
   # Create a slider input for selecting the year you wish to view
   sliderInput("columnSelect", "Select Column:",
-            min = 14, max = 23, value = 14, width = "50%"),
+            min = 2, max = 11, value = 2, width = "50%"),
+  
+  # Checkbox to toggle text display
+  checkboxInput("textToggle", "Display Text", value = TRUE),
 
   
   # Create a tmap output and make the map bigger
@@ -334,6 +347,15 @@ server <- function(input, output, session) {
   
   # Reactive values to store the selected dataframe and column
   selectedDataframe <- reactiveVal()
+  
+  output$downloadBtn <- downloadHandler(
+    filename = "my_map.png",
+    content = function(file) {
+      file.copy("my_map.png", file)
+    }
+  )
+
+
   
   # Button click event handlers
   observeEvent(input$df1Btn, {
@@ -347,6 +369,10 @@ server <- function(input, output, session) {
     observeEvent(input$df3Btn, {
     selectedDataframe(df3)
   })
+    
+  observeEvent(input$df4Btn, {
+    selectedDataframe(df4_antal)
+  })
   
   # Add event handlers for other buttons and dataframes
   
@@ -354,9 +380,11 @@ server <- function(input, output, session) {
     # Render the map
     output$map <- renderTmap({
       
+      
       df <- selectedDataframe()
       selectedColumn <- colnames(df)[input$columnSelect]
       
+        
       # Creating the map
       my_map <- df %>%
         tm_shape() +
@@ -364,9 +392,11 @@ server <- function(input, output, session) {
                 title = paste("Crime per 1000 inhabitants:", selectedColumn),
                 style = "cont",
                 palette = "-RdBu",
+
                 legend.hist = TRUE) +
-        tm_text(text = "NAME_2") +
+        tm_text(text = "NAME_2", show = input$textToggle) +  # Toggle text display +
         tm_view(set.view = 8)  # Set the initial zoom level here
+        tmap_save(my_map, filename = "my_map.png")
       
       my_map
     }
