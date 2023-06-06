@@ -15,36 +15,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
 
-# Extract the relevant columns for clustering
-crime_columns <- colnames(df1)[grepl("change_", colnames(df1))]
-crime_data_col <- df1[, crime_columns]
-
-# Standardize the crime rate data
-standardized_data <- scale(crime_data_col)
-
-# Create a spatial weights matrix (queen contiguity)
-weights <- poly2nb(mun$geometry)
-weights_mat <- nb2mat(weights, style = "B", zero.policy = TRUE)
-
-# Perform spatial clustering using k-means algorithm
-num_clusters <- 5  # Set the desired number of clusters
-kmeans_result <- kmeans(standardized_data, centers = num_clusters)
-
-# Assign cluster labels to the data
-mun$cluster <- kmeans_result$cluster
-
-# Generate a color palette for visualization
-color_palette <- brewer.pal(num_clusters, "Set1")
-
-# Plot the clustered municipalities
-plot(mun, col = color_palette[mun$cluster], main = "Spatial Clustering")
-
-
-
-
-```
 
 ## Including Plots
 
@@ -54,6 +25,8 @@ You can also embed plots, for example:
 # Use the spdep package
 library(spdep)
 
+
+#loading map
 mun_sm<- st_cast(st_simplify(mun, dTolerance = 250),
                      to = "MULTIPOLYGON")
 plot(mun_sm$geometry)
@@ -63,58 +36,16 @@ length(st_is_valid(mun_sm$geometry))
 nb <- poly2nb(mun_sm$geometry)
 nb
 
-# Get center points of each municipality
-mun_centers <- st_coordinates(st_centroid(mun_sm$geometry))
 
-# Show the connections
-plot(mun_sm$geometry); plot(nb, mun_centers, col = "red",add = TRUE)
 ```
 
 ```{r pressure}
-# Run a Moran I test test on 2015 DF vote
-moran.test(df1$change_2022, 
-           nb2listw(nb, style = "W",zero.policy=TRUE),
-           zero.policy=TRUE)
-
-# Do a Monte Carlo simulation to get a better p-value
-moran.mc(df4_antal$Y2018,nb2listw(nb, zero.policy=TRUE),zero.policy=TRUE, nsim = 999)
-
 
 library(spdep)
 
-# Create an empty dataframe to store the results
-results_df <- data.frame(matrix(ncol = 2, nrow = 0))
-colnames(results_df) <- c("Moran's I", "p-value")
-
-# Iterate over each column in df4_antal
-for (col in colnames(df1)) {
-  # Check if the column starts with "Y"
-  if (startsWith(col, "change")) {
-    # Perform the Moran's I Monte Carlo simulation
-    moran_result <- moran.mc(df1[[col]], nb2listw(nb, zero.policy = TRUE), zero.policy = TRUE, nsim = 999)
-    
-    # Extract the Moran's I and p-value from the simulation result
-    moran_i <- moran_result$statistic
-    p_value <- moran_result$p.value
-    
-    # Create a new row with Moran's I and p-value and add it to the results dataframe
-    new_row <- data.frame("Moran's I" = moran_i, "p-value" = p_value)
-    results_df <- rbind(results_df, new_row)
-    
-    # Assign the column name as row names in the results dataframe
-    rownames(results_df)[nrow(results_df)] <- col
-  }
-}
-
-# Print the results dataframe
-print(results_df)
-
-
-
-
-
 
 # List of dataframe names
+# ATTENTION, this scrip only works if you run the main scrip Shiny_crime_map.rmd first
 df_names <- c("df1", "df2", "df3")
 
 # Iterate over each dataframe name
@@ -162,21 +93,7 @@ write.csv(df3_results, file = "output/df3_moran.csv", row.names = FALSE)
 
 
 
-library(knitr)
-library(kableExtra)
 
-
-
-# Convert the dataframe to a table using kable()
-table1 <- kable(df1_results)
-table2 <- kable(df2_results)
-table3 <- kable(df3_results)
-
-
-# Save the table as an image using the save_kable() function from kableExtra
-save_kable(table1, file = "output/table1.png")
-save_kable(table2, file = "output/table2.png")
-save_kable(table3, file = "output/table3.png")
 
 
 ```

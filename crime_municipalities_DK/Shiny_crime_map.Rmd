@@ -36,7 +36,7 @@ plot(mun$geometry)
 # Check the names
 mun$NAME_2
 
-# Straighten the names (return here after Task 2)
+# Straighten the names 
 mun$NAME_2[31] <- "Aarhus"
 mun$NAME_2[21] <- "Høje-Taastrup"
 mun$NAME_2[60] <- "Vesthimmerlands"
@@ -49,16 +49,7 @@ mun$NAME_2[60] <- "Vesthimmerlands"
 # read in data from csv
 all_crime <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
 befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
-# delete row 1 and 3 and column 1
-#all_crime <- all_crime[-c(1,3), -1]
-#rename colums with names of the first row
-#colnames(all_crime) <- all_crime[1, ]
-# delete row with rownames
-#all_crime <- all_crime[-1,]
-# drop NA-rows
-#all_crime <- all_crime[complete.cases(all_crime), ]
-#drop 'ukendt kommune' row
-#all_crime <- all_crime[-100,]
+
 # pasting 'Y' before columnname
 colnames(all_crime) <- paste0("Y", colnames(all_crime))
 # rename the first column
@@ -70,16 +61,6 @@ all_crime[,2:12] <- sapply(all_crime[ ,2:12], as.numeric)
 all_crime$crime_sum <- rowSums(all_crime[,2:12])
 
 
-# edit befolkningstl csv
-#befolkningstal <- befolkningstal[-c(1),]
-#rename colums with names of the first row
-#colnames(befolkningstal) <- befolkningstal[1, ]
-# delete row with rownames
-#befolkningstal <- befolkningstal[-1,]
-# drop NA-rows
-#befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
-#drop 'ukendt kommune' row
-#befolkningstal <- befolkningstal[-100,]
 # pasting 'Y' before columnname
 colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
 # rename the first column
@@ -130,14 +111,7 @@ ejendom_2012_22_numbers <- read_csv2("data/ejendom_2012-22_numbers.csv")
 befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
 # delete row 1 and 3 and column 1
 ejendom_2012_22_numbers <- ejendom_2012_22_numbers[-c(100), -1] 
-#rename colums with names of the first row
-#colnames(all_crime) <- all_crime[1, ]
-# delete row with rownames
-#all_crime <- all_crime[-1,]
-# drop NA-rows
-#all_crime <- all_crime[complete.cases(all_crime), ]
-#drop 'ukendt kommune' row
-#all_crime <- all_crime[-100,]
+
 # pasting 'Y' before columnname
 colnames(ejendom_2012_22_numbers) <- paste0("Y", colnames(ejendom_2012_22_numbers))
 # rename the first column
@@ -149,16 +123,6 @@ ejendom_2012_22_numbers[,2:12] <- sapply(ejendom_2012_22_numbers[ ,2:12], as.num
 ejendom_2012_22_numbers$ejendom_sum <- rowSums(ejendom_2012_22_numbers[,2:12])
 
 
-# edit befolkningstl csv
-#befolkningstal <- befolkningstal[-c(1),]
-#rename colums with names of the first row
-#colnames(befolkningstal) <- befolkningstal[1, ]
-# delete row with rownames
-#befolkningstal <- befolkningstal[-1,]
-# drop NA-rows
-#befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
-#drop 'ukendt kommune' row
-#befolkningstal <- befolkningstal[-100,]
 # pasting 'Y' before columnname
 colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
 # rename the first column
@@ -208,14 +172,7 @@ vold_2012_22_numbers <- read_csv2("data/vold_2012-22_numbers.csv")
 befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
 # delete row 1 and 3 and column 1
 vold_2012_22_numbers <- vold_2012_22_numbers[-c(100), -1] 
-#rename colums with names of the first row
-#colnames(all_crime) <- all_crime[1, ]
-# delete row with rownames
-#all_crime <- all_crime[-1,]
-# drop NA-rows
-#all_crime <- all_crime[complete.cases(all_crime), ]
-#drop 'ukendt kommune' row
-#all_crime <- all_crime[-100,]
+
 # pasting 'Y' before columnname
 colnames(vold_2012_22_numbers) <- paste0("Y", colnames(vold_2012_22_numbers))
 # rename the first column
@@ -227,16 +184,6 @@ vold_2012_22_numbers[,2:12] <- sapply(vold_2012_22_numbers[ ,2:12], as.numeric)
 vold_2012_22_numbers$vold_sum <- rowSums(vold_2012_22_numbers[,2:12])
 
 
-# edit befolkningstl csv
-#befolkningstal <- befolkningstal[-c(1),]
-#rename colums with names of the first row
-#colnames(befolkningstal) <- befolkningstal[1, ]
-# delete row with rownames
-#befolkningstal <- befolkningstal[-1,]
-# drop NA-rows
-#befolkningstal <- befolkningstal[complete.cases(befolkningstal), ]
-#drop 'ukendt kommune' row
-#befolkningstal <- befolkningstal[-100,]
 # pasting 'Y' before columnname
 colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
 # rename the first column
@@ -346,6 +293,8 @@ server <- function(input, output, session) {
   # Reactive values to store the selected dataframe and column
   selectedDataframe <- reactiveVal()
   
+  mapFile <- reactiveVal()  # Define the reactive value
+  
   output$downloadBtn <- downloadHandler(
     filename = "my_map.png",
     content = function(file) {
@@ -393,9 +342,10 @@ server <- function(input, output, session) {
 
                 legend.hist = TRUE) +
         
-        #tm_text(text = "NAME_2") +  # Toggle text display +
+        #tm_text(text = "NAME_2") +  # Toggle text display 
         tm_view(set.view = 8)  # Set the initial zoom level here
-        tmap_save(my_map, filename = "my_map.png")
+      
+        mapFile("my_map.png")
       
       my_map
     }
@@ -409,50 +359,12 @@ shinyApp(ui, server)
 
 ```
 
-```{r}
-percentage_cols <- df[,2:21] / df$crime_sum*100
-df[,2:21] <- percentage_cols
-```
 
 
 
 
 
-```{r Tmap with Shiny integrated}
-# Load required libraries
-library(dplyr)
-
-# Function to perform statistical test
-perform_statistical_test <- function(data, year1, year2, alpha = 0.05) {
-  # Extract the crime rate columns for the given years
-  values <- data[, c(year1, year2)]
-  
-  # Perform paired t-test
-  t_test <- t.test(values[, 1], values[, 2], paired = TRUE)
-  
-  # Check if the p-value is less than the significance level
-  if (t_test$p.value < alpha) {
-    return("Significant")
-  } else {
-    return("Not significant")
-  }
-}
-
-# Apply the statistical test for each pair of consecutive years
-df_stat <- crime_data_final %>%
-  mutate(change_2013_2014 = perform_statistical_test(., "change_2013", "change_2014"),
-         change_2014_2015 = perform_statistical_test(., "change_2014", "change_2015"),
-         change_2015_2016 = perform_statistical_test(., "change_2015", "change_2016"),
-         change_2016_2017 = perform_statistical_test(., "change_2016", "change_2017"),
-         change_2017_2018 = perform_statistical_test(., "change_2017", "change_2018"),
-         change_2018_2019 = perform_statistical_test(., "change_2018", "change_2019"),
-         change_2019_2020 = perform_statistical_test(., "change_2019", "change_2020"),
-         change_2020_2021 = perform_statistical_test(., "change_2020", "change_2021"),
-         change_2021_2022 = perform_statistical_test(., "change_2021", "change_2022"))
 
 
-
-
-```
 
 
