@@ -334,8 +334,6 @@ ui <- fluidPage(
   sliderInput("columnSelect", "Select Column:",
             min = 2, max = 11, value = 2, width = "50%"),
   
-  # Checkbox to toggle text display
-  checkboxInput("textToggle", "Display Text", value = TRUE),
 
   
   # Create a tmap output and make the map bigger
@@ -394,7 +392,8 @@ server <- function(input, output, session) {
                 palette = "-RdBu",
 
                 legend.hist = TRUE) +
-        tm_text(text = "NAME_2", show = input$textToggle) +  # Toggle text display +
+        
+        #tm_text(text = "NAME_2") +  # Toggle text display +
         tm_view(set.view = 8)  # Set the initial zoom level here
         tmap_save(my_map, filename = "my_map.png")
       
@@ -421,59 +420,36 @@ df[,2:21] <- percentage_cols
 
 ```{r Tmap with Shiny integrated}
 # Load required libraries
-library(mapview)
-library(shiny)
-library(tmap)
+library(dplyr)
 
-# Create ui for shiny application
-  ui = fluidPage(
-    titlePanel("Danish Municipality Crime"),
-    
-    # Create a slider input for selecting the year you wish to view
-    sliderInput("columnSelect", "Select Column:",
-              min = 14, max = 23, value = 14, width = "50%"),
-
-    
-    # Create a tmap output and make the map bigger
-    tmapOutput("map",height = "1000px")
-  )
+# Function to perform statistical test
+perform_statistical_test <- function(data, year1, year2, alpha = 0.05) {
+  # Extract the crime rate columns for the given years
+  values <- data[, c(year1, year2)]
   
-  # Defining server function
-  server= function(input, output, session) {
-
-    
-      # Render the map
-      output$map <- renderTmap({
-      
-      # Get the selected column based on the slider input
-      selectedColumn <- colnames(df)[input$columnSelect]
-      
-
-      
-      # Creating the map itself and assigning it to the map object
-      my_map <- df %>% 
-                    # Using tm_shape function
-                    tm_shape() + 
-        
-                    # Calling tm_polygons for drawing the polygons
-                    tm_fill(selectedColumn,
-                                title = paste("Crime per 1000 inhabitants:", selectedColumn),
-                                style = "cont",
-                                palette = "-RdBu",
-                                legend.hist = TRUE) +
-
-                  tm_text(text = "NAME_2") +
-                  tm_view(set.view = 8)  # Set the initial zoom level here
- 
-
-
-      
-
-    })
+  # Perform paired t-test
+  t_test <- t.test(values[, 1], values[, 2], paired = TRUE)
+  
+  # Check if the p-value is less than the significance level
+  if (t_test$p.value < alpha) {
+    return("Significant")
+  } else {
+    return("Not significant")
   }
+}
 
-# Calling server function
-shinyApp(ui, server)
+# Apply the statistical test for each pair of consecutive years
+df_stat <- crime_data_final %>%
+  mutate(change_2013_2014 = perform_statistical_test(., "change_2013", "change_2014"),
+         change_2014_2015 = perform_statistical_test(., "change_2014", "change_2015"),
+         change_2015_2016 = perform_statistical_test(., "change_2015", "change_2016"),
+         change_2016_2017 = perform_statistical_test(., "change_2016", "change_2017"),
+         change_2017_2018 = perform_statistical_test(., "change_2017", "change_2018"),
+         change_2018_2019 = perform_statistical_test(., "change_2018", "change_2019"),
+         change_2019_2020 = perform_statistical_test(., "change_2019", "change_2020"),
+         change_2020_2021 = perform_statistical_test(., "change_2020", "change_2021"),
+         change_2021_2022 = perform_statistical_test(., "change_2021", "change_2022"))
+
 
 
 
