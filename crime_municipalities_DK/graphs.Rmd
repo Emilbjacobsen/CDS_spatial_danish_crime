@@ -1,0 +1,268 @@
+---
+title: "Graphs"
+author: "Nikita"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+
+```
+```{r, crimes all in all and dk_pop}
+dk_crime <-  read_csv2("data/DK_alle_ejendom_vold_numbers.csv")
+dk_pop <- read_csv2("data/DK_befolkning_numbers.csv")
+all_crime <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+
+# pasting 'Y' before columnname
+colnames(dk_crime) <- paste0("Y", colnames(dk_crime))
+colnames(all_crime) <- paste0("Y", colnames(all_crime))
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+colnames(dk_pop) <- paste0("Y", colnames(dk_pop))
+# rename the first column
+colnames(dk_crime)[1] <- "crime_act"
+colnames(dk_pop)[1] <- "population"
+colnames(all_crime)[1] <- "municipalities"
+colnames(befolkningstal)[1] <- "municipalities"
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+dk_crime[,2:12] <- sapply(dk_crime[ ,2:12], as.numeric)
+dk_pop[,2:12] <- sapply(dk_pop[ ,2:12], as.numeric)
+
+
+# Create a new dataset with the Municipality column from the population dataset
+crime_rate <- data.frame(Municipality = befolkningstal$municipalities)  
+
+years <- colnames(befolkningstal)[2:11]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  crime_col <- all_crime[, year]   # Get the crime column for the current year
+  
+  crime_rate[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+dk_per1000 <- data.frame(country = dk_crime$country) 
+
+years_dk <- colnames(dk_pop)[2:11]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years_dk) {
+  pop_col <- dk_pop[, year]   # Get the population column for the current year
+  crime_col <- dk_crime[, year]   # Get the crime column for the current year
+  
+  dk_per1000[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+
+```
+
+```{r}
+dk_crime <- read_csv2("data/DK_alle_ejendom_vold_numbers.csv")
+dk_pop <- read_csv2("data/DK_befolkning_numbers.csv")
+
+# pasting 'Y' before columnname
+colnames(dk_crime) <- paste0("Y", colnames(dk_crime))
+colnames(dk_pop) <- paste0("Y", colnames(dk_pop))
+# rename the first column
+colnames(dk_pop)[1] <- "country"
+colnames(dk_crime)[1] <- "crime_act"
+
+#dk_per1000 <- data.frame(crime_act = dk_crime$crime_act) 
+
+#years_dk <- colnames(dk_pop)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+#for (year in years_dk) {
+ # pop_col <- dk_pop[, year]   # Get the population column for the current year
+  #crime_col <- dk_crime[, year]   # Get the crime column for the current year
+  
+#  dk_per1000[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+```
+
+
+```{r, graph København}
+# Assuming your dataframe is named 'crime_data'
+municipality_name <- "København"
+
+# Filter the data for the specified municipality
+municipality_data <- all_crime %>%
+  filter(municipalities == municipality_name) %>%
+  select(starts_with("Y")) %>%
+  pivot_longer(cols = everything(), names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+# Create the line graph
+ggplot(municipality_data, aes(x = Year, y = CrimeCount)) +
+  geom_line() +
+  labs(title = paste("Crime Rate in", municipality_name),
+       x = "Year",
+       y = "Crime Count")
+  theme(panel.grid.major.y = element_line(color = "lightblue"))
+
+```
+
+```{r, graph Købenahvn, Hvidovre, Rødovre, Gladsaxe, Gentofte, Tårnby}
+# Assuming your dataframe is named 'crime_data'
+municipality_names <- c("København", "Hvidovre", "Rødovre", "Herlev", "Gladsaxe", "Gentofte", "Tårnby")
+
+# Filter and combine data for all municipalities
+combined_graph <- crime_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+# Create the line graph
+ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  labs(title = "Crime Rate Comparison",
+       x = "Year",
+       y = "Crime Count",
+       color = "Municipality")
+```
+
+
+
+```{r graph Lolland, Guldborgsund, Vordingborg}
+# Getting the specic municipalities for plotting
+municipality_names <- c("Lolland", "Guldborgsund","Vordingborg", "Langeland")
+
+# Filter and combine data for all municipalities
+combined_graph <- crime_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+# Create the line graph
+ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  labs(title = "Crime Rate Comparison",
+       x = "Year",
+       y = "Crime Count",
+       color = "Municipality")
+
+
+```
+
+```{r graph Ikast-Brande, Viborg, Silkeborg, Skanderborg, Horsens, Hedensted, Vejle, Billund, Ringkøbing-Skjern, Herning}
+
+# Getting the specic municipalities for plotting
+municipality_names <- c("Ikast-Brande", "Viborg", "Silkeborg", "Skanderborg", "Horsens", "Hedensted", "Vejle", "Billund", "Ringkøbing-Skjern", "Herning")
+
+# Filter and combine data for all municipalities
+# Filter and combine data for all municipalities
+combined_data <- crime_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+
+# Create the line graph
+ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = "Crime Rate Comparison",
+       x = "Year",
+       y = "Crime Count",
+       color = "Municipality")
+
+```
+
+```{r, crime rate all in all}
+dk <- "Danmark"
+# Filter the data for the specified municipality
+dk_plot <- dk_crime %>%
+  filter(country == dk) %>%
+  select(starts_with("Y")) %>%
+  pivot_longer(cols = everything(), names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+# Identify the range of years
+min_year <- min(dk_plot$Year)
+max_year <- max(dk_plot$Year)
+
+min_crime <- min(dk_plot$CrimeCount)
+max_crime <- max(dk_plot$CrimeCount)
+
+# Create the graph with only horizontal light blue grid lines
+dk_graph <- ggplot(dk_plot, aes(x = Year, y = CrimeCount)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  scale_y_continuous(breaks = seq(min_crime, max_crime, by = 10000), minor_breaks = NULL) +
+  labs(title = "Crime rate in Denmark 2012-2022",
+       x = "Year",
+       y = "Crime Count") +
+  theme(panel.grid.major.y = element_line(color = "lightblue"))
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/crime_entire_DK_2012-2022.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = dk_graph, dpi = 300)
+
+```
+
+```{r}
+
+
+# Reshape the data from wide to long format using tidyr::pivot_longer()
+df_long <- dk_crime %>%
+  pivot_longer(cols = starts_with("Y"), names_to = "Year", values_to = "Crime_Count") %>%
+  filter(!is.na(Crime_Count))  # Remove any rows with missing values
+
+
+min_year <- min(df_long$Year)
+max_year <- max(df_long$Year)
+min_crime <- min(df_long$CrimeCount)
+max_crime <- max(df_long$CrimeCount)
+
+# Plot the graph using ggplot2
+ggplot(df_long, aes(x = Year, y = Crime_Count, color = crime_act, group = crime_act)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  scale_y_continuous(breaks = seq(min_crime, max_crime, by = 10000), minor_breaks = NULL) +
+  labs(title = "Crime Counts by Year",
+       x = "Year",
+       y = "Crime Count",
+       color = "Crime Act") +
+  theme(panel.grid.major.y = element_line(color = "lightblue"))
+
+
+# Specify the file path and name for saving the graph
+#file_path <- "graphs/crime_entire_DK_2012-2022.png"
+
+# Save the graph as a picture file
+#ggsave(filename = file_path, plot = dk_graph, dpi = 300)
+```
+
+```{r, boxplot}
+
+# Calculate the proportions for each year
+df_prop <- dk_crime %>%
+  mutate(across(starts_with("Y"), ~ . / i_alt, .names = "prop_{.col}"))
+
+# Reshape the data into a longer format suitable for boxplotting
+df_long <- df_prop %>%
+  select(starts_with("prop")) %>%
+  pivot_longer(cols = everything(), names_to = "Year", values_to = "Proportion")
+
+# Plot the boxplot using ggplot2
+ggplot(df_long, aes(x = Year, y = Proportion, fill = Crime_Type)) +
+  geom_boxplot() +
+  labs(title = "Proportion of Crimes in i_alt",
+       x = "Year",
+       y = "Proportion",
+       fill = "Crime Type")
+
+
+
+```
+
