@@ -1,0 +1,258 @@
+---
+title: "data_prep"
+author: "Emil Jacobsen"
+date: "2023-06-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries, include=FALSE}
+# Library 
+library(raster)
+library(rgeos)
+library(sf)
+library(tidyverse)
+library(htmltools)
+library(googlesheets4)
+library(mapview)
+library(leaflet)
+```
+
+
+```{r load-municipalities-spatial-data, echo = FALSE}
+
+# Load the spatial data, project to UTM
+mun_sp<- getData('GADM', country = 'DK', level = 2)
+mun_sf <- st_as_sf(mun_sp)
+mun <- st_transform(mun_sf, crs = 25832)
+st_crs(mun)
+
+# Plot so as to check correct location and complete coverage
+plot(mun$geometry)
+
+# Check the names
+mun$NAME_2
+
+# Straighten the names 
+mun$NAME_2[31] <- "Aarhus"
+mun$NAME_2[21] <- "Høje-Taastrup"
+mun$NAME_2[60] <- "Vesthimmerlands"
+
+
+```
+
+
+```{r load all_crime }
+# read in data from csv
+all_crime <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+
+# pasting 'Y' before columnname
+colnames(all_crime) <- paste0("Y", colnames(all_crime))
+# rename the first column
+colnames(all_crime)[1] <- "municipalities"
+
+# assign numbers as numbers
+all_crime[,2:12] <- sapply(all_crime[ ,2:12], as.numeric)
+# getting sum of rows
+all_crime$crime_sum <- rowSums(all_crime[,2:12])
+
+
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+# getting sum of rows
+befolkningstal$crime_sum <- rowSums(befolkningstal[,2:12])
+
+
+crime_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  crime_col <- all_crime[, year]   # Get the crime column for the current year
+  
+  crime_rate[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+
+# Add columns for the change in crime rate per year
+crime_data <- crime_rate %>%
+    mutate(change_2013 = Y2013 - Y2012,
+           change_2014 = Y2014 - Y2013,
+           change_2015 = Y2015 - Y2014,
+           change_2016 = Y2016 - Y2015,
+           change_2017 = Y2017 - Y2016,
+           change_2018 = Y2018 - Y2017,
+           change_2019 = Y2019 - Y2018,
+           change_2020 = Y2020 - Y2019,
+           change_2021 = Y2021 - Y2020,
+           change_2022 = Y2022 - Y2021)
+
+crime_data_final <- crime_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
+
+
+
+
+```
+
+```{r load Ejendoms_data }
+# read in data from csv
+ejendom_2012_22_numbers <- read_csv2("data/ejendom_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+# delete row 1 and 3 and column 1
+ejendom_2012_22_numbers <- ejendom_2012_22_numbers[-c(100), -1] 
+
+# pasting 'Y' before columnname
+colnames(ejendom_2012_22_numbers) <- paste0("Y", colnames(ejendom_2012_22_numbers))
+# rename the first column
+colnames(ejendom_2012_22_numbers)[1] <- "municipalities"
+
+# assign numbers as numbers
+ejendom_2012_22_numbers[,2:12] <- sapply(ejendom_2012_22_numbers[ ,2:12], as.numeric)
+# getting sum of rows
+ejendom_2012_22_numbers$ejendom_sum <- rowSums(ejendom_2012_22_numbers[,2:12])
+
+
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+# getting sum of rows
+befolkningstal$ejendom_sum <- rowSums(befolkningstal[,2:12])
+
+
+ejendom_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  ejendom_col <- ejendom_2012_22_numbers[, year]   # Get the crime column for the current year
+  
+  ejendom_rate[, year] <- (ejendom_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+
+# Add columns for the change in crime rate per year
+ejendom_data <- ejendom_rate %>%
+    mutate(change_2013_ejendom = Y2013 - Y2012,
+           change_2014_ejendom = Y2014 - Y2013,
+           change_2015_ejendom = Y2015 - Y2014,
+           change_2016_ejendom = Y2016 - Y2015,
+           change_2017_ejendom = Y2017 - Y2016,
+           change_2018_ejendom = Y2018 - Y2017,
+           change_2019_ejendom = Y2019 - Y2018,
+           change_2020_ejendom = Y2020 - Y2019,
+           change_2021_ejendom = Y2021 - Y2020,
+           change_2022_ejendom = Y2022 - Y2021)
+
+ejendom_data_final <- ejendom_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
+
+
+
+
+```
+```{r load vold_data }
+# read in data from csv
+vold_2012_22_numbers <- read_csv2("data/vold_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+# delete row 1 and 3 and column 1
+vold_2012_22_numbers <- vold_2012_22_numbers[-c(100), -1] 
+
+# pasting 'Y' before columnname
+colnames(vold_2012_22_numbers) <- paste0("Y", colnames(vold_2012_22_numbers))
+# rename the first column
+colnames(vold_2012_22_numbers)[1] <- "municipalities"
+
+# assign numbers as numbers
+vold_2012_22_numbers[,2:12] <- sapply(vold_2012_22_numbers[ ,2:12], as.numeric)
+# getting sum of rows
+vold_2012_22_numbers$vold_sum <- rowSums(vold_2012_22_numbers[,2:12])
+
+
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+# getting sum of rows
+befolkningstal$vold_sum <- rowSums(befolkningstal[,2:12])
+
+
+vold_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  vold_col <- vold_2012_22_numbers[, year]   # Get the crime column for the current year
+  
+  vold_rate[, year] <- (vold_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+
+# Add columns for the change in crime rate per year
+vold_data <- vold_rate %>%
+    mutate(change_2013_vold = Y2013 - Y2012,
+           change_2014_vold = Y2014 - Y2013,
+           change_2015_vold = Y2015 - Y2014,
+           change_2016_vold = Y2016 - Y2015,
+           change_2017_vold = Y2017 - Y2016,
+           change_2018_vold = Y2018 - Y2017,
+           change_2019_vold = Y2019 - Y2018,
+           change_2020_vold = Y2020 - Y2019,
+           change_2021_vold = Y2021 - Y2020,
+           change_2022_vold = Y2022 - Y2021)
+
+vold_data_final <- vold_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
+
+
+
+
+
+
+```
+
+
+
+
+
+```{r}
+
+df1 <- mun %>% 
+  select(NAME_2) %>% 
+  merge(crime_data_final, by.x = "NAME_2",by.y ="Municipality")
+
+df2 <- mun %>% 
+  select(NAME_2) %>% 
+  merge(ejendom_data_final, by.x = "NAME_2",by.y ="Municipality")
+
+df3 <- mun %>% 
+  select(NAME_2) %>% 
+  merge(vold_data_final, by.x = "NAME_2",by.y ="Municipality")
+
+df4_antal <- mun %>% 
+  select(NAME_2) %>% 
+  merge(all_crime, by.x = "NAME_2",by.y ="municipalities")
+
+```
+
+## Including Plots

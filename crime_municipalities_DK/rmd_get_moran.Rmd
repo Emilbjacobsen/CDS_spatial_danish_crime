@@ -41,12 +41,12 @@ nb
 
 ```{r pressure}
 
-library(spdep)
 
 
 # List of dataframe names
 # ATTENTION, this scrip only works if you run the main scrip Shiny_crime_map.rmd first
 df_names <- c("df1", "df2", "df3")
+
 
 # Iterate over each dataframe name
 for (df_name in df_names) {
@@ -98,4 +98,6 @@ write.csv(df3_results, file = "output/df3_moran.csv", row.names = FALSE)
 
 ```
 
+
+```
 
