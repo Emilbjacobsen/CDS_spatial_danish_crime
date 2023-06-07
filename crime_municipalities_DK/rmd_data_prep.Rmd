@@ -11,6 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r libraries, include=FALSE}
+#uncomment to install
+
+#install.packages("raster")
+#install.packages("rgeos")
+#install.packages("sf")
+#install.packages("tidyverse")
+#install.packages("htmltools")
+#install.packages("googlesheets4")
+#install.packages("mapview")
+#install.packages("leaaflet")
+
 # Library 
 library(raster)
 library(rgeos)
@@ -98,7 +109,7 @@ crime_data <- crime_rate %>%
            change_2020 = Y2020 - Y2019,
            change_2021 = Y2021 - Y2020,
            change_2022 = Y2022 - Y2021)
-
+# Removing collumns
 crime_data_final <- crime_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
@@ -161,6 +172,8 @@ ejendom_data <- ejendom_rate %>%
            change_2021_ejendom = Y2021 - Y2020,
            change_2022_ejendom = Y2022 - Y2021)
 
+# removing collumns
+
 ejendom_data_final <- ejendom_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
@@ -222,6 +235,8 @@ vold_data <- vold_rate %>%
            change_2021_vold = Y2021 - Y2020,
            change_2022_vold = Y2022 - Y2021)
 
+#removing collumns
+
 vold_data_final <- vold_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)] 
 
 
@@ -236,6 +251,8 @@ vold_data_final <- vold_data[,-c(2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)]
 
 
 ```{r}
+
+# Merging the spatial data with the data
 
 df1 <- mun %>% 
   select(NAME_2) %>% 
@@ -255,4 +272,3 @@ df4_antal <- mun %>%
 
 ```
 
-## Including Plots

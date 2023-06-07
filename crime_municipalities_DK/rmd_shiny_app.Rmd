@@ -11,6 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
+
+#uncomment to install
+
+#install.packages("mapview")
+#install.packages("shiny")
+#install.packages("tmap")
+
 # Load required libraries
 library(mapview)
 library(shiny)
@@ -51,6 +58,8 @@ server <- function(input, output, session) {
   
   mapFile <- reactiveVal()  # Define the reactive value
   
+
+  # Making download buttun
   output$downloadBtn <- downloadHandler(
     filename = "my_map.png",
     content = function(file) {
@@ -58,9 +67,10 @@ server <- function(input, output, session) {
     }
   )
 
-
+ 
   
-  # Button click event handlers
+  
+  # Buttons for changing csv
   observeEvent(input$df1Btn, {
     selectedDataframe(df1)
   })
@@ -77,7 +87,7 @@ server <- function(input, output, session) {
     selectedDataframe(df4_antal)
   })
   
-  # Add event handlers for other buttons and dataframes
+
   
 
     # Render the map
@@ -95,12 +105,12 @@ server <- function(input, output, session) {
                 title = paste("Crime per 1000 inhabitants:", selectedColumn),
                 style = "cont",
                 palette = "-RdBu",
-
                 legend.hist = TRUE) +
         
-        #tm_text(text = "NAME_2") +  # Toggle text display 
+        tm_text(text = "NAME_2") +  # Toggle text display 
         tm_view(set.view = 8)  # Set the initial zoom level here
       
+        tmap_save(my_map, filename = "my_map.png")
         mapFile("my_map.png")
       
       my_map

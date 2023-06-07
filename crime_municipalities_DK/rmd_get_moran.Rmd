@@ -22,6 +22,10 @@ When you click the **Knit** button a document will be generated that includes bo
 You can also embed plots, for example:
 
 ```{r pressure}
+#uncomment to install
+
+#install.packages("spdep")
+
 # Use the spdep package
 library(spdep)
 
@@ -61,7 +65,7 @@ for (df_name in df_names) {
   for (col in colnames(df)) {
     # Check if the column starts with "change"
     if (startsWith(col, "change")) {
-      # Perform the Moran's I Monte Carlo simulation
+      # Perform the Moran's I Monte Carlo simulation on the specific year
       moran_result <- moran.mc(df[[col]], nb2listw(nb, zero.policy = TRUE), zero.policy = TRUE, nsim = 999)
       
       # Extract the Moran's I and p-value from the simulation result
@@ -85,6 +89,7 @@ for (df_name in df_names) {
   print(results_df_name)
 }
 
+#write csv's
 write.csv(df1_results, file = "output/df1_moran.csv", row.names = FALSE)
 
 write.csv(df2_results, file = "output/df2_moran.csv", row.names = FALSE)
