@@ -7,107 +7,144 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# unhash if you wish to install the packages 
+# install.packages("tidyverse")
+# install.packages("ggplot2")
+
 library(tidyverse)
 library(ggplot2)
 
 ```
 ```{r, crimes all in all and dk_pop}
-dk_crime <-  read_csv2("data/DK_alle_ejendom_vold_numbers.csv")
-dk_pop <- read_csv2("data/DK_befolkning_numbers.csv")
-all_crime <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
+all_crime <-  read_csv2("data/DK_forbrydelse_2012-22_numbers.csv")
+dk_crime <- read_csv2("data/DK_forbrydelse_2012-22_numbers.csv")
+all_pop <- read_csv2("data/DK_befolkning_numbers.csv")
+crime_muni <- read_csv2("data/forbrydelser_2012-22_numbers.csv")
 befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
 
 # pasting 'Y' before columnname
 colnames(dk_crime) <- paste0("Y", colnames(dk_crime))
 colnames(all_crime) <- paste0("Y", colnames(all_crime))
+colnames(all_pop) <- paste0("Y", colnames(all_pop))
+colnames(crime_muni) <- paste0("Y", colnames(crime_muni))
 colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
-colnames(dk_pop) <- paste0("Y", colnames(dk_pop))
 # rename the first column
-colnames(dk_crime)[1] <- "crime_act"
-colnames(dk_pop)[1] <- "population"
-colnames(all_crime)[1] <- "municipalities"
+colnames(all_crime)[1] <- "crime_act"
+colnames(all_pop)[1] <- "population"
+colnames(crime_muni)[1] <- "municipalities"
 colnames(befolkningstal)[1] <- "municipalities"
-# assign numbers as numbers
+colnames(dk_crime)[1] <- "country"
+#assign numbers as numbers
 befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
-dk_crime[,2:12] <- sapply(dk_crime[ ,2:12], as.numeric)
-dk_pop[,2:12] <- sapply(dk_pop[ ,2:12], as.numeric)
+crime_muni[,2:12] <- sapply(crime_muni[ ,2:12], as.numeric)
+dk_crime[,2:12] <- lapply(dk_crime[1 ,2:12], as.numeric)
+all_pop[1, 2:12] <- lapply(all_pop[1, 2:12], as.numeric)
+all_crime[1, 2:12] <- lapply(all_crime[1, 2:12], as.numeric)
 
-
+# CREATE DATAFRAME FOR OVERALL CRIMERATES IN EACH MUNICIPALITY
 # Create a new dataset with the Municipality column from the population dataset
-crime_rate <- data.frame(Municipality = befolkningstal$municipalities)  
 
-years <- colnames(befolkningstal)[2:11]   # Get the years from the population dataset columns
+crime_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
 
 # Loop through each year and calculate the crime rate per 1000 population
 for (year in years) {
   pop_col <- befolkningstal[, year]   # Get the population column for the current year
-  crime_col <- all_crime[, year]   # Get the crime column for the current year
+  crime_col <- crime_muni[, year]   # Get the crime column for the current year
   
   crime_rate[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
 }
-
-dk_per1000 <- data.frame(country = dk_crime$country) 
-
-years_dk <- colnames(dk_pop)[2:11]   # Get the years from the population dataset columns
-
-# Loop through each year and calculate the crime rate per 1000 population
-for (year in years_dk) {
-  pop_col <- dk_pop[, year]   # Get the population column for the current year
-  crime_col <- dk_crime[, year]   # Get the crime column for the current year
-  
-  dk_per1000[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
-}
-
-
 ```
 
-```{r}
-dk_crime <- read_csv2("data/DK_alle_ejendom_vold_numbers.csv")
-dk_pop <- read_csv2("data/DK_befolkning_numbers.csv")
+```{r load violence_data }
+# read in data from csv
+vold_2012_22_numbers <- read_csv2("data/vold_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+# delete row 1 and 3 and column 1
+vold_2012_22_numbers <- vold_2012_22_numbers[-c(100), -1] 
 
 # pasting 'Y' before columnname
-colnames(dk_crime) <- paste0("Y", colnames(dk_crime))
-colnames(dk_pop) <- paste0("Y", colnames(dk_pop))
+colnames(vold_2012_22_numbers) <- paste0("Y", colnames(vold_2012_22_numbers))
 # rename the first column
-colnames(dk_pop)[1] <- "country"
-colnames(dk_crime)[1] <- "crime_act"
+colnames(vold_2012_22_numbers)[1] <- "municipalities"
 
-#dk_per1000 <- data.frame(crime_act = dk_crime$crime_act) 
+# assign numbers as numbers
+vold_2012_22_numbers[,2:12] <- sapply(vold_2012_22_numbers[ ,2:12], as.numeric)
+# getting sum of rows
+vold_2012_22_numbers$vold_sum <- rowSums(vold_2012_22_numbers[,2:12])
 
-#years_dk <- colnames(dk_pop)[-1]   # Get the years from the population dataset columns
+
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+# getting sum of rows
+befolkningstal$vold_sum <- rowSums(befolkningstal[,2:12])
+
+
+vold_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
 
 # Loop through each year and calculate the crime rate per 1000 population
-#for (year in years_dk) {
- # pop_col <- dk_pop[, year]   # Get the population column for the current year
-  #crime_col <- dk_crime[, year]   # Get the crime column for the current year
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  vold_col <- vold_2012_22_numbers[, year]   # Get the crime column for the current year
   
-#  dk_per1000[, year] <- (crime_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+  vold_rate[, year] <- (vold_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
 }
-```
 
-
-```{r, graph København}
-# Assuming your dataframe is named 'crime_data'
-municipality_name <- "København"
-
-# Filter the data for the specified municipality
-municipality_data <- all_crime %>%
-  filter(municipalities == municipality_name) %>%
-  select(starts_with("Y")) %>%
-  pivot_longer(cols = everything(), names_to = "Year", values_to = "CrimeCount") %>%
-  mutate(Year = parse_number(str_remove(Year, "Y")))
-
-# Create the line graph
-ggplot(municipality_data, aes(x = Year, y = CrimeCount)) +
-  geom_line() +
-  labs(title = paste("Crime Rate in", municipality_name),
-       x = "Year",
-       y = "Crime Count")
-  theme(panel.grid.major.y = element_line(color = "lightblue"))
 
 ```
 
-```{r, graph Købenahvn, Hvidovre, Rødovre, Gladsaxe, Gentofte, Tårnby}
+```{r load property_data }
+# read in data from csv
+ejendom_2012_22_numbers <- read_csv2("data/ejendom_2012-22_numbers.csv")
+befolkningstal <- read_csv2("data/befolkningstal_2012-22_numbers.csv")
+# delete row 1 and 3 and column 1
+ejendom_2012_22_numbers <- ejendom_2012_22_numbers[-c(100), -1] 
+
+# pasting 'Y' before columnname
+colnames(ejendom_2012_22_numbers) <- paste0("Y", colnames(ejendom_2012_22_numbers))
+# rename the first column
+colnames(ejendom_2012_22_numbers)[1] <- "municipalities"
+
+# assign numbers as numbers
+ejendom_2012_22_numbers[,2:12] <- sapply(ejendom_2012_22_numbers[ ,2:12], as.numeric)
+# getting sum of rows
+ejendom_2012_22_numbers$ejendom_sum <- rowSums(ejendom_2012_22_numbers[,2:12])
+
+
+# pasting 'Y' before columnname
+colnames(befolkningstal) <- paste0("Y", colnames(befolkningstal))
+# rename the first column
+colnames(befolkningstal)[1] <- "municipalities"
+
+# assign numbers as numbers
+befolkningstal[,2:12] <- sapply(befolkningstal[ ,2:12], as.numeric)
+# getting sum of rows
+befolkningstal$ejendom_sum <- rowSums(befolkningstal[,2:12])
+
+
+ejendom_rate <- data.frame(Municipality = befolkningstal$municipalities)   # Create a new dataset with the Municipality column from the population dataset
+
+years <- colnames(befolkningstal)[-1]   # Get the years from the population dataset columns
+
+# Loop through each year and calculate the crime rate per 1000 population
+for (year in years) {
+  pop_col <- befolkningstal[, year]   # Get the population column for the current year
+  ejendom_col <- ejendom_2012_22_numbers[, year]   # Get the crime column for the current year
+  
+  ejendom_rate[, year] <- (ejendom_col / pop_col) * 1000   # Calculate the crime rate per 1000 population for the current year
+}
+
+```
+
+```{r, graph København, Hvidovre, Rødovre, Gladsaxe, Gentofte, Tårnby}
 # Assuming your dataframe is named 'crime_data'
 municipality_names <- c("København", "Hvidovre", "Rødovre", "Herlev", "Gladsaxe", "Gentofte", "Tårnby")
 
@@ -118,20 +155,52 @@ combined_graph <- crime_rate %>%
   pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
   mutate(Year = parse_number(str_remove(Year, "Y")))
 
+min_year <- min(combined_graph$Year)
+max_year <- max(combined_graph$Year)
+
 # Create the line graph
-ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
+sjælland <- ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
   geom_line() +
-  labs(title = "Crime Rate Comparison",
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = "Crime Rate Gentofte, Gladsaxe, Herlev, Hvidovre, København, Rødovre, Tårnby",
+       x = "Year",
+       y = "Crime per 1000 inhabitant",
+       color = "Municipality")
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/crime_sjælland.png"
+
+#Save the graph as a picture file
+ggsave(filename = file_path, plot = sjælland, dpi = 300)
+```
+
+```{r, graph all, property and violnce crime}
+# Getting the specic municipalities for plotting
+crime_names <- c("i_alt","voldsforbrydelser", "ejendomsforbrydelser")
+
+# Filter and combine data for all municipalities
+combined_graph <- prop_vio_all %>%
+  filter(crime_act %in% crime_names) %>%
+  select(crime_act, starts_with("Y")) %>%
+  pivot_longer(cols = -crime_act, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+# Create the line graph
+ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = crime_act)) +
+  geom_line() +
+  labs(title = "Property, Violence and overall Crime Rate for Denmark",
        x = "Year",
        y = "Crime Count",
-       color = "Municipality")
+       color = "crime_act")
+  scale_y_continuous(labels = scales::comma, 
+                     breaks = seq(0, 600000, length.out = 6), 
+                     minor_breaks = seq(0, 600000, length.out = 11))
 ```
 
 
-
-```{r graph Lolland, Guldborgsund, Vordingborg}
+```{r graph all_crime Lolland, Guldborgsund, Vordingborg, Næstved, }
 # Getting the specic municipalities for plotting
-municipality_names <- c("Lolland", "Guldborgsund","Vordingborg", "Langeland")
+municipality_names <- c("Lolland", "Guldborgsund","Vordingborg","Næstved", "Faxe", "Slagelse")
 
 # Filter and combine data for all municipalities
 combined_graph <- crime_rate %>%
@@ -140,21 +209,99 @@ combined_graph <- crime_rate %>%
   pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
   mutate(Year = parse_number(str_remove(Year, "Y")))
 
-# Create the line graph
-ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
-  geom_line() +
-  labs(title = "Crime Rate Comparison",
-       x = "Year",
-       y = "Crime Count",
-       color = "Municipality")
+min_year <- min(combined_graph$Year)
+max_year <- max(combined_graph$Year)
 
+# Create the line graph
+lolland_cluster <- ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = bquote(atop("Overall Crime Rate", 
+                          atop(italic("Guldborgsund, Faxe, Guldborgsund, Lolland, Vordingborg, Næstved"), ""))),
+      x = "Year",
+      y = "Crime per 1000 inhabitant",
+      color = "Municipality") +
+    theme(plot.title = element_text(size = 12))
+# Specify the file path and name for saving the graph
+file_path <- "graphs/crime_Faxe-Vordingborg.png"
+
+#Save the graph as a picture file
+ggsave(filename = file_path, plot = lolland_cluster, dpi = 300)
 
 ```
 
-```{r graph Ikast-Brande, Viborg, Silkeborg, Skanderborg, Horsens, Hedensted, Vejle, Billund, Ringkøbing-Skjern, Herning}
+
+```{r graph violence Lolland, Guldborgsund, Vordingborg, Næstved}
+# Getting the specic municipalities for plotting
+municipality_names <- c("Lolland", "Guldborgsund","Vordingborg","Næstved", "Faxe", "Slagelse")
+
+
+# Filter and combine data for all municipalities
+combined_data <- vold_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+min_year <- min(combined_data$Year)
+max_year <- max(combined_data$Year)
+
+# Create the line graph
+graph <- ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = bquote(atop("Acts of Violence Crime Rate", 
+                          atop(italic("Guldborgsund, Faxe, Guldborgsund, Lolland, Vordingborg, Næstved"), ""))),
+      x = "Year",
+      y = "Violence rate per 1000 inhabitant",
+      color = "Municipality") +
+  theme(plot.title = element_text(size = 12))
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/violence_lolland-guldborgsund-næstved.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = graph, dpi = 300)
+```
+
+```{r graph Lolland, Guldborgsund, Vordingborg, Næstved property}
+# Getting the specic municipalities for plotting
+municipality_names <- c("Lolland", "Guldborgsund","Vordingborg","Næstved", "Faxe", "Slagelse")
+
+# Filter and combine data for all municipalities
+# Filter and combine data for all municipalities
+combined_data <- ejendom_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+min_year <- min(combined_data$Year)
+max_year <- max(combined_data$Year)
+
+# Create the line graph
+graph <- ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = bquote(atop("Offence against Property", 
+                          atop(italic("Guldborgsund, Faxe, Guldborgsund, Lolland, Vordingborg, Næstved"), ""))),
+      x = "Year",
+      y = "Violence rate per 1000 inhabitant",
+      color = "Municipality") +
+  theme(plot.title = element_text(size = 12))
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/property_lolland-guldborgsund-vordingborg-næstved.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = graph, dpi = 300)
+```
+
+
+```{r graph Ikast-Brande, Viborg, Herning all crime}
 
 # Getting the specic municipalities for plotting
-municipality_names <- c("Ikast-Brande", "Viborg", "Silkeborg", "Skanderborg", "Horsens", "Hedensted", "Vejle", "Billund", "Ringkøbing-Skjern", "Herning")
+municipality_names <- c("Ikast-Brande", "Viborg", "Herning")
 
 # Filter and combine data for all municipalities
 # Filter and combine data for all municipalities
@@ -164,17 +311,89 @@ combined_data <- crime_rate %>%
   pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
   mutate(Year = parse_number(str_remove(Year, "Y")))
 
+min_year <- min(combined_data$Year)
+max_year <- max(combined_data$Year)
 
 # Create the line graph
-ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+ikast_graph <- ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
   geom_line() +
   scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
-  labs(title = "Crime Rate Comparison",
+  labs(title = "Crime Rate all Crimes: Ikast-Brande, Viborg, Herning",
        x = "Year",
-       y = "Crime Count",
+       y = "Crime rate per 1000 inhabitant",
        color = "Municipality")
 
+# Specify the file path and name for saving the graph
+file_path <- "graphs/crime_ikast-brand_herning_viborg.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = ikast_graph, dpi = 300)
+
 ```
+
+```{r graph Ikast-Brande, Viborg, Herning violence}
+# Getting the specic municipalities for plotting
+municipality_names <- c("Ikast-Brande", "Viborg", "Herning")
+
+# Filter and combine data for all municipalities
+# Filter and combine data for all municipalities
+combined_data <- vold_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+min_year <- min(combined_data$Year)
+max_year <- max(combined_data$Year)
+
+# Create the line graph
+ikast_graph <- ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = "Crime Rate for violent acts: Ikast-Brande, Viborg, Herning",
+       x = "Year",
+       y = "Violence rate per 1000 inhabitant",
+       color = "Municipality")
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/violence_ikast-brande_herning_viborg.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = ikast_graph, dpi = 300)
+```
+
+
+```{r graph Ikast-Brande, Viborg, Herning property}
+# Getting the specic municipalities for plotting
+municipality_names <- c("Ikast-Brande", "Viborg", "Herning")
+
+# Filter and combine data for all municipalities
+# Filter and combine data for all municipalities
+combined_data <- ejendom_rate %>%
+  filter(Municipality %in% municipality_names) %>%
+  select(Municipality, starts_with("Y")) %>%
+  pivot_longer(cols = -Municipality, names_to = "Year", values_to = "CrimeCount") %>%
+  mutate(Year = parse_number(str_remove(Year, "Y")))
+
+min_year <- min(combined_data$Year)
+max_year <- max(combined_data$Year)
+
+# Create the line graph
+ikast_graph <- ggplot(combined_data, aes(x = Year, y = CrimeCount, color = Municipality)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
+  labs(title = "Crime rate Offence against Property: Ikast-Brande, Viborg, Herning",
+       x = "Year",
+       y = "Violence rate per 1000 inhabitant",
+       color = "Municipality")
+
+# Specify the file path and name for saving the graph
+file_path <- "graphs/property_ikast-brande_herning_viborg.png"
+
+# Save the graph as a picture file
+ggsave(filename = file_path, plot = ikast_graph, dpi = 300)
+```
+
 
 ```{r, crime rate all in all}
 dk <- "Danmark"
@@ -210,59 +429,6 @@ ggsave(filename = file_path, plot = dk_graph, dpi = 300)
 
 ```
 
-```{r}
 
 
-# Reshape the data from wide to long format using tidyr::pivot_longer()
-df_long <- dk_crime %>%
-  pivot_longer(cols = starts_with("Y"), names_to = "Year", values_to = "Crime_Count") %>%
-  filter(!is.na(Crime_Count))  # Remove any rows with missing values
-
-
-min_year <- min(df_long$Year)
-max_year <- max(df_long$Year)
-min_crime <- min(df_long$CrimeCount)
-max_crime <- max(df_long$CrimeCount)
-
-# Plot the graph using ggplot2
-ggplot(df_long, aes(x = Year, y = Crime_Count, color = crime_act, group = crime_act)) +
-  geom_line() +
-  scale_x_continuous(breaks = seq(min_year, max_year, by = 1), minor_breaks = NULL) +
-  scale_y_continuous(breaks = seq(min_crime, max_crime, by = 10000), minor_breaks = NULL) +
-  labs(title = "Crime Counts by Year",
-       x = "Year",
-       y = "Crime Count",
-       color = "Crime Act") +
-  theme(panel.grid.major.y = element_line(color = "lightblue"))
-
-
-# Specify the file path and name for saving the graph
-#file_path <- "graphs/crime_entire_DK_2012-2022.png"
-
-# Save the graph as a picture file
-#ggsave(filename = file_path, plot = dk_graph, dpi = 300)
-```
-
-```{r, boxplot}
-
-# Calculate the proportions for each year
-df_prop <- dk_crime %>%
-  mutate(across(starts_with("Y"), ~ . / i_alt, .names = "prop_{.col}"))
-
-# Reshape the data into a longer format suitable for boxplotting
-df_long <- df_prop %>%
-  select(starts_with("prop")) %>%
-  pivot_longer(cols = everything(), names_to = "Year", values_to = "Proportion")
-
-# Plot the boxplot using ggplot2
-ggplot(df_long, aes(x = Year, y = Proportion, fill = Crime_Type)) +
-  geom_boxplot() +
-  labs(title = "Proportion of Crimes in i_alt",
-       x = "Year",
-       y = "Proportion",
-       fill = "Crime Type")
-
-
-
-```
 
