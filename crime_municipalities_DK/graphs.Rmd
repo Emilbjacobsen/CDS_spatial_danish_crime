@@ -174,30 +174,6 @@ file_path <- "graphs/crime_sjælland.png"
 ggsave(filename = file_path, plot = sjælland, dpi = 300)
 ```
 
-```{r, graph all, property and violnce crime}
-# Getting the specic municipalities for plotting
-crime_names <- c("i_alt","voldsforbrydelser", "ejendomsforbrydelser")
-
-# Filter and combine data for all municipalities
-combined_graph <- prop_vio_all %>%
-  filter(crime_act %in% crime_names) %>%
-  select(crime_act, starts_with("Y")) %>%
-  pivot_longer(cols = -crime_act, names_to = "Year", values_to = "CrimeCount") %>%
-  mutate(Year = parse_number(str_remove(Year, "Y")))
-
-# Create the line graph
-ggplot(combined_graph, aes(x = Year, y = CrimeCount, color = crime_act)) +
-  geom_line() +
-  labs(title = "Property, Violence and overall Crime Rate for Denmark",
-       x = "Year",
-       y = "Crime Count",
-       color = "crime_act")
-  scale_y_continuous(labels = scales::comma, 
-                     breaks = seq(0, 600000, length.out = 6), 
-                     minor_breaks = seq(0, 600000, length.out = 11))
-```
-
-
 ```{r graph all_crime Lolland, Guldborgsund, Vordingborg, Næstved, }
 # Getting the specic municipalities for plotting
 municipality_names <- c("Lolland", "Guldborgsund","Vordingborg","Næstved", "Faxe", "Slagelse")
