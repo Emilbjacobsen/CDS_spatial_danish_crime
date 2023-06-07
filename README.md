@@ -10,9 +10,10 @@ This repo has 3 RMD scripts, one for data wrangling, one for our Shiny integrate
 Here is a list of the script for the project and the order in which they are meant to be run:
 
 1. rmd_date_prep.Rmd (data wrangling)
-2. rmd_shiny_app.Rmd (map)
-3. rmd_get_moran.Rmd (spatial auto correlation)
-4. graphs.Rmd (graphs)
+2. rmd_get_moran.Rmd (spatial auto correlation)
+3. graphs.Rmd (graphs)
+4. rmd_shiny_app.Rmd (map)
+
 
 
 ## Data
