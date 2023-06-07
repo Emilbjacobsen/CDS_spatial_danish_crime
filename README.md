@@ -4,7 +4,7 @@ This the repo for our CDS_spatial final project product
 
 
 ## Running the scripts
-This repo has 3 RMD scripts, one for data wrangling, one for our Shiny integrated Tmap and 1 for spatial auto correlation.
+This repo has 4 RMD scripts, one for data wrangling, one for our Shiny integrated Tmap and 1 for spatial auto correlation.
 
 
 Here is a list of the script for the project and the order in which they are meant to be run:
